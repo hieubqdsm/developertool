@@ -24,3 +24,19 @@ button{
     text-align: center;
     border: aqua groove 1px;
 }
+.col-50{
+    width: 50%; !important;
+    float: left;
+}
+.pr-2{
+    padding-right: 10px;
+}
+.pl-2{
+    padding-left: 10px;
+}
+.mr-2{
+    margin-right: 10px;
+}
+.ml-2{
+    margin-left: 10px;
+}
