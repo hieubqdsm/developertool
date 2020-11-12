@@ -9,21 +9,21 @@
 <body>
 <div class="container">
     <h1> Developer Helper</h1>
-    <div class="main-block">
+    <div class="main-block pt-20">
         <div>
             <h2>Parameter</h2>
-        <label>
-            <textarea id = "pm1"></textarea>
+        <label> {{pm1}}
+            <textarea id = "pm1" class="w-100"></textarea>
         </label>
         </div>
-        <div>
+        <div class="pt-20">
             <h2>Template</h2>
             <label>
-                <textarea id = "tpl"></textarea>
+                <textarea id = "tpl" class="w-100"></textarea>
             </label>
         </div>
-        <div>
-            <button type="button" onclick="render_function()">OK GO</button>
+        <div class="pt-20">
+            <button type="button" onclick="render_function()">Generate</button>
         </div>
         <h2>Result</h2>
         <div id="result">
