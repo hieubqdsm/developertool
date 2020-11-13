@@ -10,41 +10,47 @@
 <div class="container">
     <h1> Developer Helper</h1>
     <div class="main-block pt-20">
-        <div>
-            <h2>Parameter</h2>
-            <div class="w-100">
-                <div class="col-50">
-                    <label for="pm1"> {{pm1}} </label>
-                    <textarea id="pm1" class="w-100"></textarea>
-                    <input type="checkbox" name="pm1_origin" value="1" id="pm1_origin">
-                    <label for="pm1_origin">Remove Space</label>
-                    <input type="radio" name="pm1_text_type" value="Origin" id="pm1_text_origin">
-                    <label for = "pm1_text_origin">Origin</label>
-                    <input type="radio" name="pm1_text_type" value="Caption" id="pm1_text_caption">
-                    <label for = "pm1_text_caption">Capital</label>
-                    <input type="radio" name="pm1_text_type" value="Camel" id="pm1_text_camel">
-                    <label for = "pm1_text_camel">Camel</label>
-                </div>
-                <div class="col-50">
-                    <label for="pm2"> {{pm2}} </label>
-                    <textarea id="pm2" class="w-100"></textarea>
-                    <input type="checkbox" name="pm2_origin" value="1" id="pm2_origin">
-                    <label for="pm2_origin">Remove Space</label>
-                    <input type="radio" name="pm2_text_type" value="Origin" id="pm2_text_origin">
-                    <label for = "pm2_text_origin">Origin</label>
-                    <input type="radio" name="pm2_text_type" value="Caption" id="pm2_text_caption">
-                    <label for = "pm2_text_caption">Capital</label>
-                    <input type="radio" name="pm2_text_type" value="Camel" id="pm2_text_camel">
-                    <label for = "pm2_text_camel">Camel</label>
-                </div>
+        <h2>Parameter</h2>
+        <div class="w-100">
+            <div class="col-50">
+                <label for="pm1"> {{pm1}} </label>
+                <textarea id="pm1" class="w-100"></textarea>
+                <label for="replace_pm1">Manipulate</label>
+                <select name="replace_pm1" id="replace_pm1">
+                    <option value="removespace">Remove Space</option>
+                    <option value="setunderline">Replace By Underline</option>
+                    <option value="setminus">Replace By Minus</option>
+                </select>
+                <br>
+                <input type="radio" name="pm1_text_type" value="Origin" id="pm1_text_origin">
+                <label for="pm1_text_origin">Origin</label>
+                <input type="radio" name="pm1_text_type" value="Caption" id="pm1_text_caption">
+                <label for="pm1_text_caption">Capital</label>
+                <input type="radio" name="pm1_text_type" value="Camel" id="pm1_text_camel">
+                <label for="pm1_text_camel">Camel</label>
+            </div>
+            <div class="col-50">
+                <label for="pm2"> {{pm2}} </label>
+                <textarea id="pm2" class="w-100"></textarea>
+                <label for="replace_pm2">Manipulate</label>
+                <select name="replace_pm1" id="replace_pm2">
+                    <option value="removespace">Remove Space</option>
+                    <option value="setunderline">Replace By Underline</option>
+                    <option value="setminus">Replace By Minus</option>
+                </select>
+                <br>
+                <input type="radio" name="pm2_text_type" value="Origin" id="pm2_text_origin">
+                <label for="pm2_text_origin">Origin</label>
+                <input type="radio" name="pm2_text_type" value="Caption" id="pm2_text_caption">
+                <label for="pm2_text_caption">Capital</label>
+                <input type="radio" name="pm2_text_type" value="Camel" id="pm2_text_camel">
+                <label for="pm2_text_camel">Camel</label>
             </div>
         </div>
     </div>
     <div class="pt-20">
         <h2>Template</h2>
-        <label>
-            <textarea id="tpl" class="w-100"></textarea>
-        </label>
+        <textarea id="tpl" class="w-100"></textarea>
     </div>
     <div class="pt-20">
         <button id="generate_xxx" name="generate_xxx" title="Generate" onclick="render_function()">Generate</button>

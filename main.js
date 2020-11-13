@@ -10,6 +10,8 @@ function render_function() {
     let pm2_option = document.getElementById("pm2_origin");
     let mp1_text_type = document.getElementsByName("pm1_text_type");
     let mp2_text_type = document.getElementsByName("pm2_text_type");
+    let space_manipulate_1 = document.getElementById("replace_pm1");
+    let space_manipulate_2 = document.getElementById("replace_pm2");
     let array_param_1 = var_param_1.value.split(",");
     let array_param_2 = var_param_2.value ? var_param_2.value.split(",") : '';
 
@@ -23,7 +25,7 @@ function render_function() {
                     break;
                 }
             }
-            let pm1_remove_space = pm1_option.checked? 1 : 0;
+            let pm1_remove_space = space_manipulate_1.value;
             let pm2_text_format;
             for (let k = 0, length = mp2_text_type.length; k < length; k++) {
                 if (mp2_text_type[k].checked) {
@@ -31,7 +33,7 @@ function render_function() {
                     break;
                 }
             }
-            let pm2_remove_space = pm2_option.checked? 1 : 0;
+            let pm2_remove_space = space_manipulate_2.value;
             let temp_text = code_template.value.replace("{{pm1}}", refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
             temp_text = temp_text.replace("{{pm2}}", refine_text(array_param_2[i].trim(), pm2_remove_space, pm2_text_format));
             final_result += temp_text;
@@ -67,8 +69,17 @@ function refine_text(raw_text, remove_space, text_format) {
             refined_text = raw_text;
             break;
     }
-    if (remove_space === 1) {
-        refined_text = refined_text.replace(" ", "");
+    switch (remove_space) {
+        case "setunderline":
+            refined_text = refined_text.replace(" ", "_");
+            break;
+        case "setminus":
+            refined_text = refined_text.replace(" ", "-");
+            break;
+        default:
+        case "removespace":
+            refined_text = refined_text.replace(" ", "");
+            break;
     }
     return refined_text;
 }
