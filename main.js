@@ -6,7 +6,6 @@ function render_function() {
     let var_param_2 = document.getElementById("pm2");
     let code_template = document.getElementById("tpl");
     let result_element = document.getElementById("result");
-    let pm1_option = document.getElementById("pm1_origin");
     let pm2_option = document.getElementById("pm2_origin");
     let mp1_text_type = document.getElementsByName("pm1_text_type");
     let mp2_text_type = document.getElementsByName("pm2_text_type");
@@ -46,7 +45,7 @@ function render_function() {
                     break;
                 }
             }
-            let pm1_remove_space = pm1_option.checked? 1 : 0;
+            let pm1_remove_space = space_manipulate_1.value;
             final_result += code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space, pm1_text_format));
             final_result += "\n\n";
         }
@@ -71,14 +70,14 @@ function refine_text(raw_text, remove_space, text_format) {
     }
     switch (remove_space) {
         case "setunderline":
-            refined_text = refined_text.replace(" ", "_");
+            refined_text = refined_text.replace(/ /g, "_");
             break;
         case "setminus":
-            refined_text = refined_text.replace(" ", "-");
+            refined_text = refined_text.replace(/ /g, "-");
             break;
         default:
         case "removespace":
-            refined_text = refined_text.replace(" ", "");
+            refined_text = refined_text.replace(/ /g, "");
             break;
     }
     return refined_text;
