@@ -6,7 +6,6 @@ function render_function() {
     let var_param_2 = document.getElementById("pm2");
     let code_template = document.getElementById("tpl");
     let result_element = document.getElementById("result");
-    let pm2_option = document.getElementById("pm2_origin");
     let mp1_text_type = document.getElementsByName("pm1_text_type");
     let mp2_text_type = document.getElementsByName("pm2_text_type");
     let space_manipulate_1 = document.getElementById("replace_pm1");
@@ -33,8 +32,8 @@ function render_function() {
                 }
             }
             let pm2_remove_space = space_manipulate_2.value;
-            let temp_text = code_template.value.replace("{{pm1}}", refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
-            temp_text = temp_text.replace("{{pm2}}", refine_text(array_param_2[i].trim(), pm2_remove_space, pm2_text_format));
+            let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
+            temp_text = temp_text.replace(/{{pm2}}/g, refine_text(array_param_2[i].trim(), pm2_remove_space, pm2_text_format));
             final_result += temp_text;
             final_result += "\n\n";
         } else {
