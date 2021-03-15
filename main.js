@@ -15,7 +15,7 @@ function render_function() {
 
     let final_result = '';
     for (let i = 0; i < array_param_1.length; i++) {
-        if (array_param_2.length > 0  ) {
+        if (array_param_2.length > 0) {
             let pm1_text_format;
             for (let j = 0, length = mp1_text_type.length; j < length; j++) {
                 if (mp1_text_type[j].checked) {
@@ -32,7 +32,7 @@ function render_function() {
                 }
             }
             let pm2_remove_space = space_manipulate_2.value;
-            let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
+            let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space, pm1_text_format));
             temp_text = temp_text.replace(/{{pm2}}/g, refine_text(array_param_2[i].trim(), pm2_remove_space, pm2_text_format));
             final_result += temp_text;
             final_result += "\n\n";
@@ -74,10 +74,12 @@ function refine_text(raw_text, remove_space, text_format) {
         case "setminus":
             refined_text = refined_text.replace(/ /g, "-");
             break;
-        default:
         case "removespace":
             refined_text = refined_text.replace(/ /g, "");
             break;
+        default:
+            break;
+
     }
     return refined_text;
 }
