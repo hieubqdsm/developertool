@@ -27,7 +27,7 @@ function render_function() {
             }
         }
         let pm1_remove_space = space_manipulate_1.value;
-        let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
+        let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space, pm1_text_format));
 
         if (array_param_2.length > 0  ) {
             let pm2_text_format;
