@@ -28,6 +28,7 @@ function render_function() {
         }
         let pm1_remove_space = space_manipulate_1.value;
         let temp_text = code_template.value.replace(/{{pm1}}/g, refine_text(array_param_1[i].trim(), pm1_remove_space,pm1_text_format));
+
         if (array_param_2.length > 0  ) {
             let pm2_text_format;
             for (let k = 0, length = mp2_text_type.length; k < length; k++) {
@@ -79,10 +80,12 @@ function refine_text(raw_text, remove_space, text_format) {
         case "setminus":
             refined_text = refined_text.replace(/ /g, "-");
             break;
-        default:
         case "removespace":
             refined_text = refined_text.replace(/ /g, "");
             break;
+        default:
+            break;
+
     }
     return refined_text;
 }
