@@ -28,6 +28,10 @@ button{
     width: 50%; !important;
     float: left;
 }
+.col-33{
+    width: 33%; !important;
+    float: left;
+}
 .pr-2{
     padding-right: 10px;
 }

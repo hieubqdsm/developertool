@@ -12,7 +12,7 @@
     <div class="main-block pt-20">
         <h2>Parameter</h2>
         <div class="w-100">
-            <div class="col-50">
+            <div class="col-33">
                 <label for="pm1"> {{pm1}} </label>
                 <textarea id="pm1" class="w-100"></textarea>
                 <label for="replace_pm1">Space Manipulate</label>
@@ -29,7 +29,7 @@
                 <input type="radio" name="pm1_text_type" value="Camel" id="pm1_text_camel">
                 <label for="pm1_text_camel">Camel</label>
             </div>
-            <div class="col-50">
+            <div class="col-33">
                 <label for="pm2"> {{pm2}} </label>
                 <textarea id="pm2" class="w-100"></textarea>
                 <label for="replace_pm2">Space Manipulate</label>
@@ -45,6 +45,23 @@
                 <label for="pm2_text_caption">Capital</label>
                 <input type="radio" name="pm2_text_type" value="Camel" id="pm2_text_camel">
                 <label for="pm2_text_camel">Camel</label>
+            </div>
+            <div class="col-33">
+                <label for="pm3"> {{pm3}} </label>
+                <textarea id="pm3" class="w-100"></textarea>
+                <label for="replace_pm3">Space Manipulate</label>
+                <select name="replace_pm3" id="replace_pm3">
+                    <option value="removespace">Remove Space</option>
+                    <option value="setunderline">Replace By Underline</option>
+                    <option value="setminus">Replace By Minus</option>
+                </select>
+                <br>
+                <input type="radio" name="pm3_text_type" value="Origin" id="pm3_text_origin">
+                <label for="pm3_text_origin">Origin</label>
+                <input type="radio" name="pm3_text_type" value="Caption" id="pm3_text_caption">
+                <label for="pm3_text_caption">Capital</label>
+                <input type="radio" name="pm3_text_type" value="Camel" id="pm3_text_camel">
+                <label for="pm3_text_camel">Camel</label>
             </div>
         </div>
     </div>
