@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Link Lark</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            margin-top: 15px;
+            font-weight: bold;
+            display: block;
+        }
+        input, select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #357ABD;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        .result-link {
+            color: blue;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .alert {
+            margin-top: 10px;
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tạo Link Lark</h1>
+        
+        <label for="baseLink">Nhập link cơ bản:</label>
+        <input type="text" id="baseLink" value="https://applink.larksuite.com/client/web_url/open">
+
+        <label for="mode">Chọn chế độ:</label>
+        <select id="mode">
+            <option value="appCenter">appCenter</option>
+            <option value="sidebar-semi">sidebar-semi</option>
+            <option value="window">window</option>
+        </select>
+
+        <label for="url">Nhập URL:</label>
+        <input type="text" id="url" placeholder="Nhập URL cần ghép" required>
+
+        <label for="linkText">Nhập nội dung thẻ &lt;a&gt;:</label>
+        <input type="text" id="linkText" placeholder="Nội dung link" required>
+
+        <label for="createLink">Tạo thẻ &lt;a&gt;:</label>
+        <select id="createLink">
+            <option value="true">Có</option>
+            <option value="false">Không</option>
+        </select>
+
+        <label for="newTab">Mở tab mới:</label>
+        <select id="newTab">
+            <option value="true">Có</option>
+            <option value="false">Không</option>
+        </select>
+
+        <button onclick="generateLink()">Tạo Link</button>
+
+        <h3>Kết quả:</h3>
+        <div>
+            <div id="resultContainer">
+                <span id="resultLink" class="result-link" style="display:none;"></span>
+                <button id="copyAnchorButton" style="display:none;" onclick="copyAnchor()">Sao chép thẻ &lt;a&gt;</button>
+            </div>
+            <pre id="fullLink" style="display:none;"></pre>
+            <button id="copyButton" style="display:none;" onclick="copyLink()">Sao chép liên kết</button>
+            <div id="alert" class="alert" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function generateLink() {
+            const baseLink = document.getElementById('baseLink').value;
+            const mode = document.getElementById('mode').value;
+            const url = document.getElementById('url').value;
+            const linkText = document.getElementById('linkText').value;
+            const createLink = document.getElementById('createLink').value === 'true';
+            const newTab = document.getElementById('newTab').value === 'true' ? '_blank' : '_self';
+
+            const finalLink = `${baseLink}?mode=${mode}&url=${encodeURIComponent(url)}`;
+            const resultLink = document.getElementById('resultLink');
+            const fullLink = document.getElementById('fullLink');
+            const copyButton = document.getElementById('copyButton');
+            const copyAnchorButton = document.getElementById('copyAnchorButton');
+            const alert = document.getElementById('alert');
+
+            if (createLink) {
+                const anchorHTML = `<a href="${finalLink}" target="${newTab}">${linkText}</a>`;
+                resultLink.textContent = anchorHTML; 
+                fullLink.textContent = finalLink; 
+                copyAnchorButton.style.display = 'inline-block'; // Hiển thị nút sao chép thẻ <a>
+            } else {
+                resultLink.textContent = `Liên kết không có thẻ <a>: ${finalLink}`;
+                fullLink.textContent = finalLink;
+                copyAnchorButton.style.display = 'none'; // Ẩn nút sao chép thẻ <a>
+            }
+
+            resultLink.style.display = 'block';
+            fullLink.style.display = 'block';
+            copyButton.style.display = 'inline-block';
+            alert.style.display = 'none'; 
+        }
+
+        function copyLink() {
+            const fullLink = document.getElementById('fullLink').textContent;
+            navigator.clipboard.writeText(fullLink).then(() => {
+                showAlert('Đã sao chép liên kết đầy đủ vào clipboard!');
+            });
+        }
+
+        function copyAnchor() {
+            const resultLink = document.getElementById('resultLink').textContent;
+            navigator.clipboard.writeText(resultLink).then(() => {
+                showAlert('Đã sao chép thẻ <a> vào clipboard!');
+            });
+        }
+
+        function showAlert(message) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none'; 
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>
