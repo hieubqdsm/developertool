@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tìm Chữ</title>
+<style>
+body {
+    font-family: sans-serif;
+}
+#grid-container {
+    display: grid;
+    border: 1px solid black;
+    margin: 20px auto;
+}
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid lightgray;
+    cursor: default;
+    user-select: none;
+}
+#options {
+  margin-top: 20px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<h1>Tìm Chữ</h1>
+
+<div id="options">
+    Kích thước ma trận: <input type="number" id="grid-size" value="10" min="5" max="40"><br>
+    Cỡ chữ: <input type="number" id="font-size" value="20" min="10" max="40">px<br>
+    Khoảng cách chữ: <input type="number" id="letter-spacing" value="5" min="0" max="20">px<br>
+    Màu chữ: <input type="color" id="text-color" value="#000000"><br>
+    Hiệu ứng cầu vồng: <input type="checkbox" id="rainbow-effect"><br>
+    Các từ mồi (cách nhau bằng dấu phẩy): <input type="text" id="words" value="CAT,DOG,BIRD"><br>
+    <button onclick="generateGrid()">Tạo Bảng</button>
+</div>
+
+<div id="grid-container"></div>
+
+<script>
+function generateGrid() {
+    const gridSize = parseInt(document.getElementById("grid-size").value);
+    const fontSize = parseInt(document.getElementById("font-size").value);
+    const letterSpacing = parseInt(document.getElementById("letter-spacing").value);
+    const textColor = document.getElementById("text-color").value;
+    const rainbowEffect = document.getElementById("rainbow-effect").checked;
+    const wordsInput = document.getElementById("words").value;
+
+    const words = wordsInput.toUpperCase().split(",").map(word => word.trim()).filter(word => word.length <= gridSize && word.length > 0);
+
+    //const words = wordsInput.toUpperCase().split(",").filter(word => word.length <= gridSize && word.length > 0);
+
+    const gridContainer = document.getElementById("grid-container");
+
+    gridContainer.innerHTML = "";
+    gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    gridContainer.style.width = `${gridSize * (fontSize + letterSpacing + 2)}px`;
+
+    const grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(""));
+
+    words.forEach(word => {
+        let placed = false;
+        let attempts = 0; // Giới hạn số lần thử đặt từ
+        const maxAttempts = 100; // Số lần thử tối đa
+
+        while (!placed && attempts < maxAttempts) {
+            const rowOrCol = Math.floor(Math.random() * 2);
+            const startPos = Math.floor(Math.random() * (gridSize - word.length + 1));
+            const fixedPos = Math.floor(Math.random() * gridSize);
+
+            let canPlace = true;
+            for (let i = 0; i < word.length; i++) {
+                if (rowOrCol === 0) {
+                    if (grid[fixedPos][startPos + i] !== "") {
+                        canPlace = false;
+                        break;
+                    }
+                } else {
+                    if (grid[startPos + i][fixedPos] !== "") {
+                        canPlace = false;
+                        break;
+                    }
+                }
+            }
+
+            if (canPlace) {
+                for (let i = 0; i < word.length; i++) {
+                    if (rowOrCol === 0) {
+                        grid[fixedPos][startPos + i] = word[i];
+                    } else {
+                        grid[startPos + i][fixedPos] = word[i];
+                    }
+                }
+                placed = true;
+            }
+            attempts++;
+        }
+        if (!placed) {
+          console.warn("Không thể đặt từ: " + word + ". Hãy thử lại hoặc giảm kích thước từ.");
+        }
+    });
+
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            if (grid[i][j] === "") {
+                grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            }
+        }
+    }
+
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.style.fontSize = `${fontSize}px`;
+            cell.style.letterSpacing = `${letterSpacing}px`;
+            cell.textContent = grid[i][j];
+
+            if (rainbowEffect) {
+                cell.style.color = `hsl(${(i*gridSize + j) * (360 / (gridSize * gridSize))}, 100%, 50%)`;
+            } else {
+                cell.style.color = textColor;
+            }
+
+            gridContainer.appendChild(cell);
+        }
+    }
+}
+
+generateGrid();
+</script>
+
+</body>
+</html>
