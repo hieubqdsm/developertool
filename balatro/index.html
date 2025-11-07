@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Balatro v7 (Đã Sửa Lỗi)</title>
+    <style>
+        /* Animation cho lá bài bị xoay đi (khi đổi/chơi) */
+        @keyframes rotate-out-in-hand {
+            from {
+                transform: scale(1) rotateY(0deg) translateY(var(--translate-y, 0px));
+                opacity: 1;
+            }
+            to {
+                transform: scale(0.8) rotateY(90deg) translateY(var(--translate-y, 0px));
+                opacity: 0;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-areas:
+                "info info"
+                "jokers jokers"
+                "staging staging" 
+                "hand hand"
+                "actions actions"
+                "log log";
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* 1. Khu vực Thông tin */
+        #game-info {
+            grid-area: info;
+            display: flex;
+            justify-content: space-around;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        #game-info div { text-align: center; }
+        #game-info h3 { margin: 0 0 5px 0; color: #aaa; font-weight: 600; }
+        #game-info .value { font-size: 1.5em; font-weight: bold; color: #fff; }
+        #level-display { color: #f0f0f0; }
+        #target-score { color: #e6c60d; }
+        #current-score { color: #4CAF50; }
+        #hands-remaining { color: #2196F3; }
+        #discards-remaining { color: #f44336; }
+
+        /* 2. Khu vực Jokers */
+        #joker-area {
+            grid-area: jokers;
+            display: flex;
+            justify-content: center; 
+            gap: 20px; 
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 120px;
+            align-items: stretch;
+        }
+        .joker {
+            background-color: #fff;
+            color: #121212;
+            border: 2px solid #aaa;
+            border-radius: 6px;
+            padding: 10px;
+            width: 100px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .joker .name { font-weight: bold; margin-bottom: 5px; }
+        .joker .desc { font-size: 0.8em; color: #333; margin-top: auto; }
+
+        /* 3. Khu vực "Sàn Diễn" */
+        #staging-area {
+            grid-area: staging;
+            background: #1a1a1a;
+            border: 1px dashed #444;
+            border-radius: 8px;
+            min-height: 180px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #staging-readout {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            height: 30px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        #staging-label { color: #e6c60d; }
+        #staging-chips { color: #fff; }
+        #staging-mult { color: #ff6b6b; }
+        
+        #staging-cards {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* 4. Khu vực Bài trên tay */
+        #hand-area {
+            grid-area: hand;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            min-height: 200px;
+            padding-top: 25px;
+            border-top: 1px solid #333;
+            perspective: 800px;
+        }
+        .card {
+            width: 80px;
+            height: 120px;
+            background-color: #fdfdfd;
+            border: 2px solid #aaa;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            
+            /* Transition mặc định cho "nhô lên" (pop up) */
+            transition: transform 0.2s ease-out, border-color 0.2s, box-shadow 0.2s;
+            /* Dùng CSS variable để giữ trạng thái nhô lên khi xoay */
+            --translate-y: 0px; 
+        }
+        .card.selected {
+            --translate-y: -25px; /* Set biến */
+            transform: translateY(var(--translate-y)); 
+            border-color: #2196F3;
+            box-shadow: 0 8px 15px rgba(33, 150, 243, 0.4);
+        }
+        .card.discarding {
+            /* Animation này sẽ đọc biến --translate-y */
+            animation: rotate-out-in-hand 0.5s forwards ease-in;
+            pointer-events: none;
+        }
+
+        .card.suit-red { color: #d90000; }
+        .card.suit-black { color: #111; }
+
+        /* 5. Khu vực Nút bấm */
+        #actions {
+            grid-area: actions;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #play-hand { background-color: #4CAF50; color: white; }
+        #play-hand:disabled { background-color: #555; cursor: not-allowed; }
+        #discard-hand { background-color: #f44336; color: white; }
+        #discard-hand:disabled { background-color: #555; cursor: not-allowed; }
+
+        /* 6. Khu vực Log */
+        #message-log {
+            grid-area: log;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            min-height: 100px;
+            font-family: monospace;
+            color: #ccc;
+        }
+        .log-win { color: #4CAF50; font-weight: bold; }
+        .log-pass { color: #00bcd4; font-weight: bold; } /* Màu "Qua Màn" */
+        .log-warn { color: #e6c60d; }
+        .log-error { color: #f44336; }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-board">
+        <div id="game-info">
+            <div>
+                <h3>Ante</h3>
+                <span id="level-display" class="value">1</span>
+            </div>
+            <div>
+                <h3>Mục Tiêu</h3>
+                <span id="target-score" class="value">0</span>
+            </div>
+            <div>
+                <h3>Điểm</h3>
+                <span id="current-score" class="value">0</span>
+            </div>
+            <div>
+                <h3>Đánh</h3>
+                <span id="hands-remaining" class="value">4</span>
+            </div>
+            <div>
+                <h3>Đổi</h3>
+                <span id="discards-remaining" class="value">3</span>
+            </div>
+        </div>
+
+        <div id="joker-area">
+            <div class="joker">
+                <div class="name">Joker Vui Vẻ</div>
+                <div class="desc">+4 Mult</div>
+            </div>
+            <div class="joker">
+                <div class="name">Joker Tham Lam</div>
+                <div class="desc">x2 Mult nếu chơi 'Flush' (Đồng chất)</div>
+            </div>
+        </div>
+
+        <div id="staging-area">
+            <div id="staging-readout">
+                <span id="staging-label"></span>
+                <span id="staging-chips"></span>
+                <span id="staging-mult"></span>
+            </div>
+            <div id="staging-cards">
+            </div>
+        </div>
+
+        <div id="hand-area">
+        </div>
+
+        <div id="actions">
+            <button id="play-hand">Chơi Bài</button>
+            <button id="discard-hand">Đổi Bài</button>
+        </div>
+
+        <div id="message-log">Chào mừng!</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- CÁC HẰNG SỐ CỦA GAME ---
+            const SUITS = [
+                { name: '♥', color: 'red', order: 1 },
+                { name: '♦', color: 'red', order: 2 },
+                { name: '♣', color: 'black', order: 3 },
+                { name: '♠', color: 'black', order: 4 }
+            ];
+            const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const HAND_SIZE = 8;
+            const BASE_HANDS = 4;
+            const BASE_DISCARDS = 3;
+            let CARD_ID_COUNTER = 0;
+            // Thêm các màn chơi
+            const TARGET_SCORES = [300, 800, 2000, 5000, 10000]; // 5 Màn
+
+            const CARD_CHIPS = {
+                '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11
+            };
+
+            const HAND_VALUES = {
+                'High Card':    { chips: 5,  mult: 1 },
+                'Pair':         { chips: 10, mult: 2 },
+                'Two Pair':     { chips: 20, mult: 3 },
+                'Three of a Kind': { chips: 30, mult: 4 },
+                'Straight':     { chips: 40, mult: 5 },
+                'Flush':        { chips: 40, mult: 4 },
+                'Full House':   { chips: 60, mult: 7 },
+                'Four of a Kind': { chips: 80, mult: 8 },
+                'Straight Flush': { chips: 100, mult: 10 }
+            };
+
+            // --- TRẠNG THÁI GAME (GAME STATE) ---
+            let gameState = {
+                level: 1, // Màn 1
+                targetScores: TARGET_SCORES,
+                currentScore: 0,
+                handsRemaining: BASE_HANDS,
+                discardsRemaining: BASE_DISCARDS,
+                deck: [],
+                hand: [],
+                jokers: [
+                    { id: 'joker_add_mult', apply: (scoreData) => { scoreData.mult += 4; } },
+                    { id: 'joker_flush_x_mult', apply: (scoreData, handType) => {
+                        if (handType === 'Flush' || handType === 'Straight Flush') {
+                            scoreData.xMult *= 2;
+                        }
+                    }}
+                ]
+            };
+
+            // --- DOM ELEMENTS ---
+            const levelDisplayEl = document.getElementById('level-display'); // Mới
+            const targetScoreEl = document.getElementById('target-score');
+            const currentScoreEl = document.getElementById('current-score');
+            const handsRemainingEl = document.getElementById('hands-remaining');
+            const discardsRemainingEl = document.getElementById('discards-remaining');
+            const handAreaEl = document.getElementById('hand-area');
+            const playHandBtn = document.getElementById('play-hand');
+            const discardHandBtn = document.getElementById('discard-hand');
+            const messageLogEl = document.getElementById('message-log');
+            const stagingLabelEl = document.getElementById('staging-label');
+            const stagingChipsEl = document.getElementById('staging-chips');
+            const stagingMultEl = document.getElementById('staging-mult');
+            const stagingCardsEl = document.getElementById('staging-cards');
+
+            // --- CÁC HÀM XỬ LÝ GAME ---
+
+            // 1. Khởi tạo và Xáo bài
+            function createDeck() {
+                const newDeck = [];
+                CARD_ID_COUNTER = 0;
+                for (const suit of SUITS) {
+                    for (let i = 0; i < RANKS.length; i++) {
+                        newDeck.push({
+                            cardId: `card-${CARD_ID_COUNTER++}`,
+                            rank: RANKS[i],
+                            suit: suit.name,
+                            suitColor: suit.color,
+                            value: i + 2, // 2=2, A=14
+                            suitOrder: suit.order
+                        });
+                    }
+                }
+                return newDeck;
+            }
+
+            function shuffleDeck(deck) {
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+
+            // 2. Rút bài
+            function drawCards(num) {
+                for (let i = 0; i < num; i++) {
+                    if (gameState.deck.length === 0) {
+                        logMessage("Hết bài! Xào lại bộ bài...", "log-warn");
+                        gameState.deck = createDeck();
+                        shuffleDeck(gameState.deck);
+                    }
+                    if (gameState.hand.length < HAND_SIZE) {
+                        gameState.hand.push(gameState.deck.pop());
+                    }
+                }
+                sortHand();
+            }
+
+            function sortHand() {
+                gameState.hand.sort((a, b) => {
+                    if (a.value !== b.value) return b.value - a.value; // Giảm dần
+                    return a.suitOrder - b.suitOrder;
+                });
+            }
+
+            // 3. Render (Hiển thị) - ĐÃ SỬA LỖI "NHÔ LÊN"
+            function renderHand() {
+                const oldPositions = new Map();
+                
+                // 1. FIRST
+                Array.from(handAreaEl.children).forEach(cardEl => {
+                    const cardId = cardEl.dataset.cardId;
+                    if (cardId) {
+                        oldPositions.set(cardId, cardEl.getBoundingClientRect());
+                    }
+                });
+                
+                handAreaEl.innerHTML = '';
+                
+                // 2. LAST
+                gameState.hand.forEach((cardData, index) => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = `card suit-${cardData.suitColor}`;
+                    cardEl.innerHTML = `<span>${cardData.rank}</span><span>${cardData.suit}</span>`;
+                    cardEl.dataset.index = index;
+                    cardEl.dataset.cardId = cardData.cardId;
+                    cardEl.addEventListener('click', () => toggleCardSelection(cardEl));
+                    handAreaEl.appendChild(cardEl);
+                    
+                    // 3. INVERT
+                    const newRect = cardEl.getBoundingClientRect();
+                    const oldRect = oldPositions.get(cardData.cardId);
+                    
+                    if (oldRect) {
+                        const deltaX = oldRect.left - newRect.left;
+                        const deltaY = oldRect.top - newRect.top;
+                        cardEl.style.transition = 'none';
+                        cardEl.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                    } else {
+                        cardEl.style.transition = 'none';
+                        cardEl.style.transform = 'scale(0.5)';
+                        cardEl.style.opacity = '0';
+                    }
+                });
+
+                // 4. PLAY
+                requestAnimationFrame(() => {
+                    Array.from(handAreaEl.children).forEach(cardEl => {
+                        // Bật transition FLIP
+                        cardEl.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+                        cardEl.style.transform = 'translate(0, 0) scale(1)';
+                        cardEl.style.opacity = '1';
+                        
+                        // *** SỬA LỖI "NHÔ LÊN" ***
+                        // Sau khi FLIP, xóa style để CSS (.selected) hoạt động
+                        setTimeout(() => {
+                            if (cardEl) {
+                                cardEl.style.transition = ''; // Reset về CSS default
+                                cardEl.style.transform = ''; // XÓA inline transform
+                            }
+                        }, 500); // 500ms khớp với animation
+                    });
+                });
+            }
+
+            // Cập nhật tất cả thông tin trên UI
+            function updateUI() {
+                levelDisplayEl.textContent = gameState.level;
+                targetScoreEl.textContent = gameState.targetScores[gameState.level - 1].toLocaleString('en-US');
+                currentScoreEl.textContent = gameState.currentScore.toLocaleString('en-US');
+                handsRemainingEl.textContent = gameState.handsRemaining;
+        
+                discardsRemainingEl.textContent = gameState.discardsRemaining;
+
+                // Logic bật/tắt nút
+                const currentTarget = gameState.targetScores[gameState.level - 1];
+                const gameIsOver = (gameState.handsRemaining === 0 && gameState.currentScore < currentTarget) || gameState.level > gameState.targetScores.length;
+                playHandBtn.disabled = gameIsOver;
+                discardHandBtn.disabled = gameIsOver || gameState.discardsRemaining === 0;
+            }
+
+            function toggleCardSelection(cardEl) {
+                if (cardEl.classList.contains('discarding')) return;
+                cardEl.classList.toggle('selected');
+                
+                // Cập nhật preview ngay lập tức
+                updateLivePreview();
+            }
+
+            // 4. Ghi Log
+            function logMessage(message, className = '') {
+                messageLogEl.innerHTML = ''; // Xóa log cũ
+                const p = document.createElement('p');
+                p.textContent = message;
+                if (className) p.className = className;
+                messageLogEl.appendChild(p);
+            }
+
+            // 5. Xử lý chơi/đổi bài
+            function getSelectedCards() {
+                const selectedEls = document.querySelectorAll('.card.selected');
+                const selectedCards = [];
+                const selectedElements = [];
+                selectedEls.forEach(el => {
+                    // Cẩn thận kiểm tra index hợp lệ
+                    const index = parseInt(el.dataset.index);
+                    if (index >= 0 && index < gameState.hand.length) {
+                         selectedCards.push(gameState.hand[index]);
+                         selectedElements.push(el);
+                    }
+                });
+                return { selectedCards, selectedElements };
+            }
+            
+            function updateStagingReadout(label, scoreData = null) {
+                stagingLabelEl.textContent = label;
+                if (scoreData) {
+                    const finalMult = scoreData.mult * scoreData.xMult;
+                    stagingChipsEl.textContent = `${scoreData.baseChips} Chips`;
+                    stagingMultEl.textContent = `x ${finalMult}`;
+                } else {
+                    stagingChipsEl.textContent = '';
+                    stagingMultEl.textContent = '';
+                }
+            }
+            
+            function updateStagingCards(cards) {
+                stagingCardsEl.innerHTML = ''; // Xóa cũ
+                stagingCardsEl.className = '';
+
+                cards.forEach(cardData => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = `card suit-${cardData.suitColor}`;
+                    cardEl.innerHTML = `<span>${cardData.rank}</span><span>${cardData.suit}</span>`;
+                    cardEl.style.width = '70px';
+                    cardEl.style.height = '105px';
+                    cardEl.style.fontSize = '2em';
+                    stagingCardsEl.appendChild(cardEl);
+                });
+            }
+            
+            // Hàm xem trước điểm
+            function updateLivePreview() {
+                const { selectedCards } = getSelectedCards();
+                
+                if (selectedCards.length === 0 || selectedCards.length > 5) {
+                    updateStagingReadout('');
+                    stagingCardsEl.innerHTML = '';
+                    return;
+                }
+
+                const handType = evaluatePokerHand(selectedCards);
+
+                if (handType === 'Invalid') {
+                    updateStagingReadout('Invalid');
+                    stagingCardsEl.innerHTML = '';
+                    return;
+                }
+                
+                const scoreData = calculateScore(selectedCards, handType);
+                updateStagingReadout(handType, scoreData);
+                updateStagingCards(selectedCards);
+            }
+
+
+            function handlePlayHand() {
+                if (playHandBtn.disabled) return;
+                const { selectedCards, selectedElements } = getSelectedCards();
+                
+                if (selectedCards.length === 0 || selectedCards.length > 5) {
+                    logMessage("Vui lòng chọn từ 1 đến 5 lá bài.", "log-error");
+                    return;
+                }
+
+                const handType = evaluatePokerHand(selectedCards);
+                
+                if (handType === 'Invalid') {
+                     logMessage("Tay bài không hợp lệ!", "log-error");
+                     return;
+                }
+                
+                // Tạm thời vô hiệu hóa nút
+                playHandBtn.disabled = true;
+                discardHandBtn.disabled = true;
+
+                // Kích hoạt animation xoay
+                selectedElements.forEach(el => {
+                    el.classList.remove('selected');
+                    el.classList.add('discarding');
+                });
+                
+                // Dọn dẹp sàn diễn (chỉ giữ điểm, xóa lá bài)
+                stagingCardsEl.innerHTML = '';
+
+                // Đợi animation xoay xong
+                setTimeout(() => {
+                    gameState.handsRemaining--;
+                    const scoreData = calculateScore(selectedCards, handType);
+                    gameState.currentScore += scoreData.totalScore;
+                    logMessage(`Bạn chơi ${handType}! Đạt ${scoreData.totalScore.toLocaleString('en-US')} điểm.`);
+                    
+                    // Xóa bài CŨ (bài đã chơi) khỏi gameState.hand
+                    const playedCardIds = new Set(selectedCards.map(c => c.cardId));
+                    gameState.hand = gameState.hand.filter(card => !playedCardIds.has(card.cardId));
+
+                    drawCards(selectedCards.length); // Rút bài mới (và tự sort)
+                    renderHand(); // Vẽ lại tay bài (với animation FLIP)
+                    updateUI(); // Cập nhật điểm và nút
+                    checkGameStatus(); // Kiểm tra thắng/thua/qua màn
+                    updateLivePreview(); // Dọn dẹp sàn diễn
+                }, 500); // 500ms khớp với animation
+            }
+
+            // *** HÀM ĐÃ SỬA LỖI ***
+            function handleDiscardHand() {
+                if (discardHandBtn.disabled) return;
+                
+                const { selectedCards, selectedElements } = getSelectedCards();
+
+                if (selectedCards.length === 0 || selectedCards.length > 5) {
+                    logMessage("Vui lòng chọn 1-5 lá bài để đổi.", "log-error");
+                    return;
+                }
+
+                gameState.discardsRemaining--;
+                logMessage(`Đã đổi ${selectedCards.length} lá.`, "log-warn");
+                
+                // Dọn dẹp sàn diễn
+                updateStagingReadout('');
+                stagingCardsEl.innerHTML = '';
+                
+                // Kích hoạt animation đổi bài tại chỗ
+                selectedElements.forEach(el => {
+                    el.classList.remove('selected');
+                    el.classList.add('discarding');
+                });
+                
+                playHandBtn.disabled = true;
+                discardHandBtn.disabled = true;
+
+                // Đợi animation xoay xong
+                setTimeout(() => {
+                    // *** ĐÂY LÀ CHỖ SỬA LỖI ***
+                    const discardedIds = new Set(selectedCards.map(c => c.cardId));
+                    gameState.hand = gameState.hand.filter(card => !discardedIds.has(card.cardId));
+                    
+                    drawCards(selectedCards.length); // Rút bài MỚI (và tự sort)
+                    renderHand(); // Vẽ lại tay bài (với animation FLIP)
+                    updateUI();
+                    checkGameStatus();
+                    updateLivePreview();
+                }, 500); // 500ms khớp với animation
+            }
+
+            // Logic kiểm tra game (Thắng/Thua/Qua Màn)
+            function checkGameStatus() {
+                const currentTarget = gameState.targetScores[gameState.level - 1];
+
+                // 1. Kiểm tra QUA MÀN
+                if (gameState.currentScore >= currentTarget) {
+                    // Nếu là màn cuối
+                    if (gameState.level === gameState.targetScores.length) {
+                        logMessage(`CHIẾN THẮNG TRÒ CHƠI!`, "log-win");
+                        playHandBtn.disabled = true;
+                        discardHandBtn.disabled = true;
+                    } else {
+                        // Nếu qua màn
+                        logMessage(`QUA MÀN ${gameState.level}!`, "log-pass");
+                        advanceToNextLevel();
+                    }
+                } 
+                // 2. Kiểm tra THUA CUỘC
+             meState.handsRemaining === 0 && gameState.currentScore < currentTarget) {
+                    logMessage(`THUA CUỘC! Hết lượt đánh.`, "log-error");
+                    playHandBtn.disabled = true;
+                    discardHandBtn.disabled = true;
+                }
+            }
+            
+            // Hàm mới để qua màn
+            function advanceToNextLevel() {
+                gameState.level++;
+                gameState.currentScore = 0;
+                gameState.handsRemaining = BASE_HANDS;
+                gameState.discardsRemaining = BASE_DISCARDS;
+                // Cập nhật UI ngay lập tức
+                updateUI();
+                // Bật lại nút cho màn mới
+                playHandBtn.disabled = false;
+                discardHandBtn.disabled = false;
+            }
+
+            // --- HÀM TÍNH ĐIỂM ---
+            function calculateScore(cards, handType) {
+                let scoreData = { baseChips: 0, mult: 0, xMult: 1.0, totalScore: 0 };
+                cbaseHandValue = HAND_VALUES[handType];
+                if (!baseHandValue) { return scoreData; }
+
+                scoreData.baseChips = baseHandValue.chips;
+                scoreData.mult = baseHandValue.mult;
+                cards.forEach(card => {
+                    scoreData.baseChips += CARD_CHIPS[card.rank];
+                });
+                gameState.jokers.forEach(joker => {
+                    joker.apply(scoreData, handType);
+                });
+                scoreData.totalScore = Math.floor((scoreData.baseChips * scoreData.mult) * scoreData.xMult);
+                return scoreData;
+            }
+
+            // --- HÀM ĐÁNH GIÁ TAY BÀI (1-5 LÁ) ---
+            function evaluatePokerHand(cards) {
+                const len = cards.length;
+                if (len === 0 || len > 5) return 'Invalid';
+
+                const rankCounts = {};
+                cards.forEach(card => {
+                    rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
+                });
+                counts = Object.values(rankCounts).sort((a, b) => b - a);
+
+                if (len === 5) {
+                    cards.sort((a, b) => a.value - b.value);
+                    const isFlush = cards.every(card => card.suit === cards[0].suit);
+                    let isStraight = true;
+                    for (let i = 0; i < 4; i++) {
+                        if (cards[i+1].value !== cards[i].value + 1) isStraight = false;
+                    }
+                    const ranksForStraightCheck = cards.map(c => c.value);
+                    const hasAceLowStraight = JSON.stringify(ranksForStraightCheck) === JSON.stringify([2,3,4,5,14]);
+                    if (!isStraight && hasAceLowStraight) isStraight = true;
+
+                    if (isStraight && isFlush) return 'Straight Flush';
+                    if (counts[0] === 4) return 'Four of a Kind';
+                    if (counts[0] === 3 && counts[1] === 2) return 'Full House';
+                    if (isFlush) return 'Flush';
+                    if (isStraight) return 'Straight';
+                    if (counts[0] === 3) return 'Three of a Kind';
+                    if (counts[0] === 2 && counts[1] === 2) return 'Two Pair';
+                    if (counts[0] === 2) return 'Pair';
+                    return 'High Card';
+                }
+                if (len === 4) {
+                    if (counts[0] === 4) return 'Four of a Kind';
+                    if (counts[0] === 3) return 'Three of a Kind';
+                    if (counts[0] === 2 && counts[1] === 2) return 'Two Pair';
+                    if (counts[0] === 2) return 'Pair';
+                    return 'High Card';
+                }
+                if (len === 3) {
+                    if (counts[0] === 3) return 'Three of a Kind';
+                    if (counts[0] === 2) return 'Pair';
+                    return 'High Card';
+                }
+                if (len === 2) {
+                    if (counts[0] === 2) return 'Pair';
+                    return 'High Card';
+                }
+                if (len === 1) { return 'High Card'; }
+                return 'Invalid'; 
+            }
+
+            // --- HÀM KHỞI ĐỘNG GAME ---
+            function startGame() {
+                gameState.deck = createDeck();
+                shuffleDeck(gameState.deck);
+                drawCards(HAND_SIZE);
+                renderHand(); // Vẽ tay bài lần đầu
+                updateUI(); // Cập nhật UI (màn 1, điểm 0, v.v.)
+                logMessage(`Chào mừng! Bắt đầu Ante ${gameState.level}.`, "log-warn")     playHandBtn.addEventListener('click', handlePlayHand);
+                discardHandBtn.addEventListener('click', handleDiscardHand);
+            }
+
+            startGame();
+        });
+    </script>
+</body>
+</html>
