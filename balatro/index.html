@@ -662,7 +662,7 @@
                     }
                 } 
                 // 2. Kiểm tra THUA CUỘC
-             meState.handsRemaining === 0 && gameState.currentScore < currentTarget) {
+                else if (gameState.handsRemaining === 0 && gameState.currentScore < currentTarget) {
                     logMessage(`THUA CUỘC! Hết lượt đánh.`, "log-error");
                     playHandBtn.disabled = true;
                     discardHandBtn.disabled = true;
@@ -685,7 +685,7 @@
             // --- HÀM TÍNH ĐIỂM ---
             function calculateScore(cards, handType) {
                 let scoreData = { baseChips: 0, mult: 0, xMult: 1.0, totalScore: 0 };
-                cbaseHandValue = HAND_VALUES[handType];
+                const baseHandValue = HAND_VALUES[handType];
                 if (!baseHandValue) { return scoreData; }
 
                 scoreData.baseChips = baseHandValue.chips;
@@ -709,7 +709,7 @@
                 cards.forEach(card => {
                     rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
                 });
-                counts = Object.values(rankCounts).sort((a, b) => b - a);
+                const counts = Object.values(rankCounts).sort((a, b) => b - a);
 
                 if (len === 5) {
                     cards.sort((a, b) => a.value - b.value);
@@ -759,7 +759,9 @@
                 drawCards(HAND_SIZE);
                 renderHand(); // Vẽ tay bài lần đầu
                 updateUI(); // Cập nhật UI (màn 1, điểm 0, v.v.)
-                logMessage(`Chào mừng! Bắt đầu Ante ${gameState.level}.`, "log-warn")     playHandBtn.addEventListener('click', handlePlayHand);
+                logMessage(`Chào mừng! Bắt đầu Ante ${gameState.level}.`, "log-warn");
+
+                playHandBtn.addEventListener('click', handlePlayHand);
                 discardHandBtn.addEventListener('click', handleDiscardHand);
             }
 
