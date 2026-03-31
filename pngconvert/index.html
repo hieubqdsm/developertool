@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Scale Ảnh Pro</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f9fafb;
+            --border: #e5e7eb;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        /* Vùng kéo thả */
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            background-color: #f8fafc;
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background-color: #eef2ff;
+        }
+
+        .drop-zone p {
+            margin: 0;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        /* Các ô nhập liệu */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .input-group input[type="number"] {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* Checkbox giữ tỷ lệ */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Nút bấm */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Khu vực xem trước và tải xuống */
+        .result-area {
+            display: none; /* Ẩn đi khi chưa có ảnh */
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #preview {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        #downloadBtn {
+            background-color: #10b981;
+            text-decoration: none;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+
+        #downloadBtn:hover {
+            background-color: #059669;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Scale Ảnh PNG</h2>
+
+    <div class="drop-zone" id="dropZone">
+        <p>Kéo thả ảnh vào đây hoặc Click để chọn file</p>
+        <input type="file" id="fileInput" accept="image/png, image/jpeg">
+    </div>
+
+    <div class="controls">
+        <div class="input-group">
+            <label for="width">Chiều rộng (px)</label>
+            <input type="number" id="width" placeholder="Width">
+        </div>
+        <div class="input-group">
+            <label for="height">Chiều cao (px)</label>
+            <input type="number" id="height" placeholder="Height">
+        </div>
+    </div>
+
+    <label class="checkbox-group">
+        <input type="checkbox" id="lockRatio" checked>
+        Giữ đúng tỷ lệ ảnh (Aspect Ratio)
+    </label>
+
+    <button id="scaleBtn">Áp dụng Scale</button>
+
+    <div class="result-area" id="resultArea">
+        <p style="font-size: 0.9em; color: #64748b; margin-bottom: 5px;">Ảnh xem trước:</p>
+        <img id="preview" alt="Preview">
+        <a id="downloadBtn" download="scaled-image.png" class="button" style="width: 100%; padding: 12px; color: white; border-radius: 6px; font-weight: bold; text-align: center;">Tải ảnh xuống</a>
+    </div>
+
+    <canvas id="canvas"></canvas>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const lockRatioCheckbox = document.getElementById('lockRatio');
+    const scaleBtn = document.getElementById('scaleBtn');
+    const preview = document.getElementById('preview');
+    const resultArea = document.getElementById('resultArea');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let img = new Image();
+    let originalAspectRatio = 1;
+
+    // 1. XỬ LÝ KÉO THẢ VÀ CHỌN FILE
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        if (!file.type.match('image.*')) {
+            alert('Vui lòng chọn file hình ảnh!');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+            img.onload = () => {
+                // Tính tỷ lệ khung hình
+                originalAspectRatio = img.width / img.height;
+
+                // Tự động scale sao cho chiều lớn nhất là 1000px
+                let targetWidth = img.width;
+                let targetHeight = img.height;
+
+                if (img.width > 1000 || img.height > 1000) {
+                    if (img.width > img.height) {
+                        targetWidth = 1000;
+                        targetHeight = Math.round(1000 / originalAspectRatio);
+                    } else {
+                        targetHeight = 1000;
+                        targetWidth = Math.round(1000 * originalAspectRatio);
+                    }
+                }
+
+                // Cập nhật giá trị vào input
+                widthInput.value = targetWidth;
+                heightInput.value = targetHeight;
+
+                // Tự động scale và hiển thị ngay lần đầu up ảnh
+                doScale();
+                
+                dropZone.querySelector('p').innerText = "Đã chọn: " + file.name;
+            };
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 2. XỬ LÝ KHÓA TỶ LỆ KHI GÕ SỐ
+    widthInput.addEventListener('input', function() {
+        if (lockRatioCheckbox.checked && this.value) {
+            heightInput.value = Math.round(this.value / originalAspectRatio);
+        }
+    });
+
+    heightInput.addEventListener('input', function() {
+        if (lockRatioCheckbox.checked && this.value) {
+            widthInput.value = Math.round(this.value * originalAspectRatio);
+        }
+    });
+
+    // 3. XỬ LÝ SCALE ẢNH VÀ XUẤT FILE
+    scaleBtn.addEventListener('click', () => {
+        if (!img.src) {
+            alert('Bạn chưa tải ảnh lên!');
+            return;
+        }
+        doScale();
+    });
+
+    function doScale() {
+        const w = parseInt(widthInput.value);
+        const h = parseInt(heightInput.value);
+
+        if (!w || !h || w <= 0 || h <= 0) return;
+
+        canvas.width = w;
+        canvas.height = h;
+
+        // Xóa nền (trong suốt cho PNG) và vẽ lại ảnh
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Xuất ra base64
+        const dataURL = canvas.toDataURL('image/png');
+        
+        // Hiển thị kết quả
+        preview.src = dataURL;
+        downloadBtn.href = dataURL;
+        resultArea.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
