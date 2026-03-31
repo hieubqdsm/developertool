@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ Scale Ảnh Pro</title>
+    <meta property="og:image" content="logo.png">
+    <meta property="og:image:width" content="250">
+    <meta property="og:image:height" content="250">
+    <title>Công cụ Scale Ảnh ko Pro</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -136,7 +140,8 @@
 
         /* Khu vực xem trước và tải xuống */
         .result-area {
-            display: none; /* Ẩn đi khi chưa có ảnh */
+            display: none;
+            /* Ẩn đi khi chưa có ảnh */
             margin-top: 20px;
             text-align: center;
         }
@@ -164,169 +169,174 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>Scale Ảnh PNG</h2>
+    <div class="container">
+        <div style="text-align: center;"><img id="logo" src="logo.png" alt="Logo" width="250px"></div>
+        <h2>Scale Ảnh PNG</h2>
 
-    <div class="drop-zone" id="dropZone">
-        <p>Kéo thả ảnh vào đây hoặc Click để chọn file</p>
-        <input type="file" id="fileInput" accept="image/png, image/jpeg">
-    </div>
-
-    <div class="controls">
-        <div class="input-group">
-            <label for="width">Chiều rộng (px)</label>
-            <input type="number" id="width" placeholder="Width">
+        <div class="drop-zone" id="dropZone">
+            <p>Kéo thả ảnh vào đây hoặc Click để chọn file</p>
+            <input type="file" id="fileInput" accept="image/png, image/jpeg">
         </div>
-        <div class="input-group">
-            <label for="height">Chiều cao (px)</label>
-            <input type="number" id="height" placeholder="Height">
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="width">Chiều rộng (px)</label>
+                <input type="number" id="width" placeholder="Width">
+            </div>
+            <div class="input-group">
+                <label for="height">Chiều cao (px)</label>
+                <input type="number" id="height" placeholder="Height">
+            </div>
         </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="lockRatio" checked>
+            Giữ đúng tỷ lệ ảnh (Aspect Ratio)
+        </label>
+
+        <button id="scaleBtn">Áp dụng Scale</button>
+
+        <div class="result-area" id="resultArea">
+            <p style="font-size: 0.9em; color: #64748b; margin-bottom: 5px;">Ảnh xem trước:</p>
+            <img id="preview" alt="Preview">
+            <a id="downloadBtn" download="scaled-image.png" class="button"
+                style="width: 100%; padding: 12px; color: white; border-radius: 6px; font-weight: bold; text-align: center;">Tải
+                ảnh xuống</a>
+        </div>
+
+        <canvas id="canvas"></canvas>
     </div>
 
-    <label class="checkbox-group">
-        <input type="checkbox" id="lockRatio" checked>
-        Giữ đúng tỷ lệ ảnh (Aspect Ratio)
-    </label>
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const lockRatioCheckbox = document.getElementById('lockRatio');
+        const scaleBtn = document.getElementById('scaleBtn');
+        const preview = document.getElementById('preview');
+        const resultArea = document.getElementById('resultArea');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
 
-    <button id="scaleBtn">Áp dụng Scale</button>
+        let img = new Image();
+        let originalAspectRatio = 1;
 
-    <div class="result-area" id="resultArea">
-        <p style="font-size: 0.9em; color: #64748b; margin-bottom: 5px;">Ảnh xem trước:</p>
-        <img id="preview" alt="Preview">
-        <a id="downloadBtn" download="scaled-image.png" class="button" style="width: 100%; padding: 12px; color: white; border-radius: 6px; font-weight: bold; text-align: center;">Tải ảnh xuống</a>
-    </div>
+        // 1. XỬ LÝ KÉO THẢ VÀ CHỌN FILE
+        dropZone.addEventListener('click', () => fileInput.click());
 
-    <canvas id="canvas"></canvas>
-</div>
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
 
-<script>
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const widthInput = document.getElementById('width');
-    const heightInput = document.getElementById('height');
-    const lockRatioCheckbox = document.getElementById('lockRatio');
-    const scaleBtn = document.getElementById('scaleBtn');
-    const preview = document.getElementById('preview');
-    const resultArea = document.getElementById('resultArea');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
 
-    let img = new Image();
-    let originalAspectRatio = 1;
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
 
-    // 1. XỬ LÝ KÉO THẢ VÀ CHỌN FILE
-    dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', function (e) {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
+        function handleFile(file) {
+            if (!file.type.match('image.*')) {
+                alert('Vui lòng chọn file hình ảnh!');
+                return;
+            }
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.src = e.target.result;
+                img.onload = () => {
+                    // Tính tỷ lệ khung hình
+                    originalAspectRatio = img.width / img.height;
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-            handleFile(e.dataTransfer.files[0]);
-        }
-    });
+                    // Tự động scale sao cho chiều lớn nhất là 1000px
+                    let targetWidth = img.width;
+                    let targetHeight = img.height;
 
-    fileInput.addEventListener('change', function(e) {
-        if (e.target.files.length) {
-            handleFile(e.target.files[0]);
-        }
-    });
-
-    function handleFile(file) {
-        if (!file.type.match('image.*')) {
-            alert('Vui lòng chọn file hình ảnh!');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            img.src = e.target.result;
-            img.onload = () => {
-                // Tính tỷ lệ khung hình
-                originalAspectRatio = img.width / img.height;
-
-                // Tự động scale sao cho chiều lớn nhất là 1000px
-                let targetWidth = img.width;
-                let targetHeight = img.height;
-
-                if (img.width > 1000 || img.height > 1000) {
-                    if (img.width > img.height) {
-                        targetWidth = 1000;
-                        targetHeight = Math.round(1000 / originalAspectRatio);
-                    } else {
-                        targetHeight = 1000;
-                        targetWidth = Math.round(1000 * originalAspectRatio);
+                    if (img.width > 1000 || img.height > 1000) {
+                        if (img.width > img.height) {
+                            targetWidth = 1000;
+                            targetHeight = Math.round(1000 / originalAspectRatio);
+                        } else {
+                            targetHeight = 1000;
+                            targetWidth = Math.round(1000 * originalAspectRatio);
+                        }
                     }
-                }
 
-                // Cập nhật giá trị vào input
-                widthInput.value = targetWidth;
-                heightInput.value = targetHeight;
+                    // Cập nhật giá trị vào input
+                    widthInput.value = targetWidth;
+                    heightInput.value = targetHeight;
 
-                // Tự động scale và hiển thị ngay lần đầu up ảnh
-                doScale();
-                
-                dropZone.querySelector('p').innerText = "Đã chọn: " + file.name;
+                    // Tự động scale và hiển thị ngay lần đầu up ảnh
+                    doScale();
+
+                    dropZone.querySelector('p').innerText = "Đã chọn: " + file.name;
+                };
             };
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // 2. XỬ LÝ KHÓA TỶ LỆ KHI GÕ SỐ
-    widthInput.addEventListener('input', function() {
-        if (lockRatioCheckbox.checked && this.value) {
-            heightInput.value = Math.round(this.value / originalAspectRatio);
+            reader.readAsDataURL(file);
         }
-    });
 
-    heightInput.addEventListener('input', function() {
-        if (lockRatioCheckbox.checked && this.value) {
-            widthInput.value = Math.round(this.value * originalAspectRatio);
+        // 2. XỬ LÝ KHÓA TỶ LỆ KHI GÕ SỐ
+        widthInput.addEventListener('input', function () {
+            if (lockRatioCheckbox.checked && this.value) {
+                heightInput.value = Math.round(this.value / originalAspectRatio);
+            }
+        });
+
+        heightInput.addEventListener('input', function () {
+            if (lockRatioCheckbox.checked && this.value) {
+                widthInput.value = Math.round(this.value * originalAspectRatio);
+            }
+        });
+
+        // 3. XỬ LÝ SCALE ẢNH VÀ XUẤT FILE
+        scaleBtn.addEventListener('click', () => {
+            if (!img.src) {
+                alert('Bạn chưa tải ảnh lên!');
+                return;
+            }
+            doScale();
+        });
+
+        function doScale() {
+            const w = parseInt(widthInput.value);
+            const h = parseInt(heightInput.value);
+
+            if (!w || !h || w <= 0 || h <= 0) return;
+
+            canvas.width = w;
+            canvas.height = h;
+
+            // Xóa nền (trong suốt cho PNG) và vẽ lại ảnh
+            ctx.clearRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // Xuất ra base64
+            const dataURL = canvas.toDataURL('image/png');
+
+            // Hiển thị kết quả
+            preview.src = dataURL;
+            downloadBtn.href = dataURL;
+            resultArea.style.display = 'block';
         }
-    });
-
-    // 3. XỬ LÝ SCALE ẢNH VÀ XUẤT FILE
-    scaleBtn.addEventListener('click', () => {
-        if (!img.src) {
-            alert('Bạn chưa tải ảnh lên!');
-            return;
-        }
-        doScale();
-    });
-
-    function doScale() {
-        const w = parseInt(widthInput.value);
-        const h = parseInt(heightInput.value);
-
-        if (!w || !h || w <= 0 || h <= 0) return;
-
-        canvas.width = w;
-        canvas.height = h;
-
-        // Xóa nền (trong suốt cho PNG) và vẽ lại ảnh
-        ctx.clearRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // Xuất ra base64
-        const dataURL = canvas.toDataURL('image/png');
-        
-        // Hiển thị kết quả
-        preview.src = dataURL;
-        downloadBtn.href = dataURL;
-        resultArea.style.display = 'block';
-    }
-</script>
+    </script>
 
 </body>
+
 </html>
